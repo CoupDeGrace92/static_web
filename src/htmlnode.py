@@ -4,8 +4,8 @@ class HTMLNode:
     def __init__(self, tag = None, value = None, children = None, props = None):
         self.tag = tag
         self.value = value
-        self.children = children or []
-        self.props = props or {}
+        self.children = [] if children is None else children
+        self.props = {} if props is None else props
 
     def to_html(self):
         raise NotImplementedError
@@ -50,7 +50,7 @@ class ParentNode(HTMLNode):
     def to_html(self):
         if self.tag is None:
             raise ValueError
-        if self.children is None:
+        if not self.children:
             raise ValueError('Parent Node has no Children')
         #Recursive string - return the html tag of the node and its children respecting props
         conc_child = ''

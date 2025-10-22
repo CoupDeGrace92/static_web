@@ -202,7 +202,7 @@ def markdown_to_blocks(markdown):
         
 
 def block_to_block_type(block):
-    if re.match(r'#{1,6} ',block):
+    if re.match(r'#+ ',block):
         return BlockType.HEADING
     
     if re.search(r'\A```.*```\Z',block,re.DOTALL):
@@ -245,9 +245,9 @@ def text_to_children(text, block_type):
         for i in cleaned_text:
             text_nodes = text_to_text_nodes(i)
             children_nodes = [text_node_to_html_node(node) for node in text_nodes]
-            li_children.append(HTMLNode(tag='li', children = children_nodes))
+            li_children.append(ParentNode(tag='li', children = children_nodes))
         #Now we need to build the parent of the children list items
-        child_node = HTMLNode(tag = ('ul' if block_type == BlockType.UNORDERED_LIST else 'ol'),
+        child_node = ParentNode(tag = ('ul' if block_type == BlockType.UNORDERED_LIST else 'ol'),
                               children = li_children)
         return child_node
     else:
@@ -263,11 +263,15 @@ def text_to_children(text, block_type):
         else:
             raise ValueError('Unhandled block type exception')
         children_nodes = [text_node_to_html_node(node) for node in text_nodes]
-        child_node = HTMLNode( tag = node_tag, children = children_nodes)
+        child_node = ParentNode( tag = node_tag, children = children_nodes)
         return child_node
 
 def block_stripper(text, block_type):
     level = None
+    if block_type == BlockType.PARAGRAPH:
+        lines = text.split('\n')
+        cleaned = ' '.join([line for line in lines if line.strip() != ''])
+        return cleaned, level
     if block_type == BlockType.HEADING:
         heading_count = 0
         for i in text:
@@ -323,26 +327,32 @@ def block_stripper(text, block_type):
                 raise ValueError('Ordered list block contains non-list item in markdown')
         level -= 1
         return cleaned_text, level
-    return text, level
+    raise ValueError('Unhandled block type')
 
 def markdown_to_html_node(markdown):
     block_list = markdown_to_blocks(markdown)
     master_list = []
     for block in block_list:
         block_type = block_to_block_type(block)
-        node_value = None
-        children_list = []
-        node_tag = None
         if block_type == BlockType.CODE:
-            node_tag = 'pre'
-            stripped_block = block.strip('```')
-            stripped_block.strip('\n')
-            code_child = HTMLNode(tag = 'code', value = stripped_block, children = None)
-            children_list = [code_child]
+            lines = block.splitlines()
+            if not (lines and lines[0].startswith("```") and lines[-1].startswith("```")):
+                raise ValueError('Invalid code fence')
+            code_text = '\n'.join(lines[1:-1])+'\n'
+            code_child = LeafNode(tag='code', value=code_text)
+            child_node = ParentNode(tag='pre', children=[code_child])
+            master_list.append(child_node)
         else:
-
-
-        block_node = HTMLNode(tag = node_tag, value = node_value, children = children_list)
-        master_list.append(block_node)
-    master_node = HTMLNode(tag = 'div', children = master_list)
+            cleaned_tuple = block_stripper(block ,block_type)
+            child_node = text_to_children(cleaned_tuple, block_type)
+            master_list.append(child_node)
+    master_node = ParentNode(tag = 'div', children = master_list)
     return master_node
+
+def extract_title(markdown):
+    markdown_list = markdown.split('\n')
+    for i in markdown_list:
+        trimmed = i.strip()
+        if trimmed.startswith('# '):
+            return trimmed[2:].strip()
+    raise Exception('No title found')
