@@ -12,8 +12,8 @@ def main():
     else:
         raise Exception('Unexpected error occurred')
     
-    move_to_clean('static', 'public', True)
-    generate_pages_recursive('content', 'template.html', 'public', basepath)
+    move_to_clean('static', 'docs', True)
+    generate_pages_recursive('content', 'template.html', 'docs', basepath)
 
 
 
