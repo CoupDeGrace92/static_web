@@ -374,7 +374,7 @@ def generate_page(from_path, template_path, dest_path, basepath):
     raw_template = raw_template.replace('{{ Title }}', title)
     raw_template = raw_template.replace('{{ Content }}', HTML_string)
     raw_template = raw_template.replace('href="/', f'href="{basepath}')
-    raw_template = raw_template.replace('src"/', f'src"{basepath}')
+    raw_template = raw_template.replace('src="/', f'src="{basepath}')
     with open(dest_path, 'w') as dest_file:
         dest_file.write(raw_template)
     

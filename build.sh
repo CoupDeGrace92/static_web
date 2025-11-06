@@ -1,1 +1,1 @@
-python3 src/main.py "https://coupdegrace92.github.io/static_web/"
+python3 src/main.py "/static_web/"
