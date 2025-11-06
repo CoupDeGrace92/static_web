@@ -385,5 +385,37 @@ the **same** even with inline stuff
         with self.assertRaises(ValueError):
             markdown_to_html_node(md)
 
+class TestExtractTitle(unittest.TestCase):
+    
+    def test_base_case(self):
+        md = "# Hello World!"
+        self.assertEqual('Hello World!', extract_title(md))
+
+    def test_no_h1(self):
+        md = 'Hello World!'
+        with self.assertRaises(Exception):
+            extract_title(md)
+    
+    def test_too_many_hashes(self):
+        md = '## Hello World!'
+        with self.assertRaises(Exception):
+            extract_title(md)
+
+    def test_no_space(self):
+        md = '#Hello World!'
+        with self.assertRaises(Exception):
+            extract_title(md)
+    
+    def test_stripped_whitespaces(self):
+        md = '# Hello World! '
+        self.assertEqual('Hello World!', extract_title(md))
+
+    def test_multiline_md(self):
+        md = """# Hello World!
+
+This is a new part of the md
+"""
+        self.assertEqual("Hello World!", extract_title(md))
+
 if __name__ == "__main__":
     unittest.main()

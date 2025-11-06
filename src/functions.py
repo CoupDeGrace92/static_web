@@ -1,4 +1,5 @@
 import re
+import os
 
 from htmlnode import HTMLNode, LeafNode, ParentNode
 from textnode import TextNode, TextType
@@ -295,6 +296,8 @@ def block_stripper(text, block_type):
             if item.startswith('> '):
                 cleaned_item = item[2:]
                 cleaned_text_list.append(cleaned_item)
+            elif item in ('>','> '):
+                cleaned_text_list.append('')
             else:
                 if item != '':
                     raise ValueError('Quote block contains non-quote in markdown')
@@ -356,3 +359,36 @@ def extract_title(markdown):
         if trimmed.startswith('# '):
             return trimmed[2:].strip()
     raise Exception('No title found')
+
+def generate_page(from_path, template_path, dest_path):
+    print(f'Generating page from {from_path} to {dest_path} using {template_path}')
+    dest_dir = os.path.dirname(dest_path)
+    if dest_dir:
+        os.makedirs(dest_dir, exist_ok=True)
+    with open(from_path) as md_file:
+        raw_md = md_file.read()
+    with open(template_path) as template_file:
+        raw_template = template_file.read()
+    HTML_string = markdown_to_html_node(raw_md).to_html()
+    title = extract_title(raw_md)
+    raw_template = raw_template.replace('{{ Title }}', title)
+    raw_template = raw_template.replace('{{ Content }}', HTML_string)
+    with open(dest_path, 'w') as dest_file:
+        dest_file.write(raw_template)
+    
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    content_list = os.listdir(dir_path_content)
+    for i in content_list:
+        modified_path = os.path.join(dir_path_content, i)
+        if os.path.isdir(modified_path):
+            modified_dest_path = os.path.join(dest_dir_path, i)
+            dest_dir = os.path.dirname(modified_dest_path)
+            if dest_dir:
+                os.makedirs(dest_dir, exist_ok=True)
+            generate_pages_recursive(modified_path, template_path, modified_dest_path)
+        elif os.path.isfile(modified_path):
+            html_rel = os.path.splitext(i)[0] + '.html'
+            modified_dest_path = os.path.join(dest_dir_path, html_rel)
+            generate_page(modified_path, template_path, modified_dest_path)
+        else:
+            raise Exception('Neither a file nor a directory using os')
