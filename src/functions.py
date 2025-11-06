@@ -360,7 +360,7 @@ def extract_title(markdown):
             return trimmed[2:].strip()
     raise Exception('No title found')
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f'Generating page from {from_path} to {dest_path} using {template_path}')
     dest_dir = os.path.dirname(dest_path)
     if dest_dir:
@@ -373,10 +373,12 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(raw_md)
     raw_template = raw_template.replace('{{ Title }}', title)
     raw_template = raw_template.replace('{{ Content }}', HTML_string)
+    raw_template = raw_template.replace('href="/', f'href="{basepath}')
+    raw_template = raw_template.replace('src"/', f'src"{basepath}')
     with open(dest_path, 'w') as dest_file:
         dest_file.write(raw_template)
     
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     content_list = os.listdir(dir_path_content)
     for i in content_list:
         modified_path = os.path.join(dir_path_content, i)
@@ -385,10 +387,10 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
             dest_dir = os.path.dirname(modified_dest_path)
             if dest_dir:
                 os.makedirs(dest_dir, exist_ok=True)
-            generate_pages_recursive(modified_path, template_path, modified_dest_path)
+            generate_pages_recursive(modified_path, template_path, modified_dest_path, basepath)
         elif os.path.isfile(modified_path):
             html_rel = os.path.splitext(i)[0] + '.html'
             modified_dest_path = os.path.join(dest_dir_path, html_rel)
-            generate_page(modified_path, template_path, modified_dest_path)
+            generate_page(modified_path, template_path, modified_dest_path, basepath)
         else:
             raise Exception('Neither a file nor a directory using os')
